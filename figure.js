@@ -160,6 +160,8 @@ window.onload = function init () {
   var diffuseProduct = mult(lightDiffuse, materialDiffuse);
   var specularProduct = mult(lightSpecular, materialSpecular);
 
+
+  // event listner buttons
   document.getElementById("ButtonX").onclick = function(){axis = xAxis;};
   document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
   document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
@@ -372,7 +374,7 @@ function leftUpperArm () {
   instanceMatrix = mult(instanceMatrix, scale(upperArmWidth, upperArmHeight, upperArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-    // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+    // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -382,7 +384,7 @@ function leftLowerArm () {
   instanceMatrix = mult(instanceMatrix, scale(lowerArmWidth, lowerArmHeight, lowerArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -392,7 +394,7 @@ function rightUpperArm () {
   instanceMatrix = mult(instanceMatrix, scale(upperArmWidth, upperArmHeight, upperArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-    //gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+    //gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -402,7 +404,7 @@ function rightLowerArm () {
   instanceMatrix = mult(instanceMatrix, scale(lowerArmWidth, lowerArmHeight, lowerArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -412,7 +414,7 @@ function leftUpperLeg () {
   instanceMatrix = mult(instanceMatrix, scale(upperLegWidth, upperLegHeight, upperLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -422,7 +424,7 @@ function leftLowerLeg () {
   instanceMatrix = mult(instanceMatrix, scale(lowerLegWidth, lowerLegHeight, lowerLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -432,7 +434,7 @@ function rightUpperLeg () {
   instanceMatrix = mult(instanceMatrix, scale(upperLegWidth, upperLegHeight, upperLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -442,7 +444,7 @@ function rightLowerLeg () {
   instanceMatrix = mult(instanceMatrix, scale(lowerLegWidth, lowerLegHeight, lowerLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
-  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);//uncomment to change the color
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -472,11 +474,14 @@ function quad (a, b, c, d) {
   pointsArray.push(vertices[c]);
   normalsArray.push(normal);
 
-  // pointsArray.push(vertices[a])
-  // normalsArray.push(normal);
+  // pointsArray.push(vertices[a]) // uncoment to broke the robot
 
-  // pointsArray.push(vertices[c]);
-  // normalsArray.push(normal);
+  // normalsArray.push(normal); // uncoment to broke the robot
+
+  // pointsArray.push(vertices[c]); // uncoment to broke the robot
+
+  // normalsArray.push(normal); // uncoment to broke the robot
+
 
   pointsArray.push(vertices[d])
   normalsArray.push(normal);
