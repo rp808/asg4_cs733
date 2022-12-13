@@ -1,6 +1,16 @@
 'use strict'
 
-let canvas, gl, program
+var canvas;
+var gl;
+var numPositions  = 36;
+
+
+var program;
+var flag = false;
+
+
+var color = new Uint8Array(4);
+
 
 let projectionMatrix, modelViewMatrix, instanceMatrix
 let modelViewMatrixLoc
@@ -15,7 +25,24 @@ const vertices = [
   vec4(0.5, 0.5, -0.5, 1.0),
   vec4(0.5, -0.5, -0.5, 1.0)
 ]
+var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
+var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0);
+var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialShininess = 100.0;
+var ctm;
+var viewerPos;
+var ambientColor, diffuseColor, specularColor;
+
+var xAxis = 0;
+var yAxis = 1;
+var zAxis = 2;
+var axis = xAxis;
+var Index = 0;
 const torsoId = 0
 const headId = 1
 const head1Id = 1
@@ -55,6 +82,8 @@ const stack = []
 const figure = []
 
 const pointsArray = []
+var normalsArray = [];
+var framebuffer;
 
 window.onload = function init () {
   canvas = document.getElementById('gl-canvas')
@@ -62,12 +91,59 @@ window.onload = function init () {
   if (!gl) {
     alert('WebGL 2.0 is not available')
   }
+
   gl.viewport(0, 0, canvas.width, canvas.height)
-  gl.clearColor(0.9, 0.9, 0.9, 1.0)
+  gl.clearColor(0.5, 0.5, 0.5, 1.0)
+
+  gl.enable(gl.CULL_FACE);
+  
+
+  var texture = gl.createTexture();
+  gl.bindTexture( gl.TEXTURE_2D, texture );
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0,
+     gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.generateMipmap(gl.TEXTURE_2D);
+
+  // Allocate a frame buffer object
+
+  framebuffer = gl.createFramebuffer();
+  gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer);
+
+  // Attach color buffer
+  
+
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
   //  Load shaders and initialize attribute buffers
   program = initShaders(gl, 'vertex-shader', 'fragment-shader')
   gl.useProgram(program)
 
+ 
+
+  cube()
+
+  var nBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer );
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
+
+  var normalLoc =gl.getAttribLocation( program, "aNormal");
+  gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(normalLoc);
+
+  
+  const vBuffer = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer)
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW)
+
+
+
+  const positionLoc = gl.getAttribLocation(program, 'aPosition')
+  gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0)
+  gl.enableVertexAttribArray(positionLoc);
+
+  viewerPos = vec3(0.0, 0.0, -20.0 );
   instanceMatrix = mat4()
   projectionMatrix = ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
   modelViewMatrix = mat4()
@@ -80,18 +156,18 @@ window.onload = function init () {
   for (let i = 0; i < numNodes; i++) {
     figure[i] = createNode(null, null, null, null)
   }
+  var ambientProduct = mult(lightAmbient, materialAmbient);
+  var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+  var specularProduct = mult(lightSpecular, materialSpecular);
 
-  cube()
-
-  const vBuffer = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer)
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW)
-
-  const positionLoc = gl.getAttribLocation(program, 'aPosition')
-  gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0)
-  gl.enableVertexAttribArray(positionLoc)
-
+  document.getElementById("ButtonX").onclick = function(){axis = xAxis;};
+  document.getElementById("ButtonY").onclick = function(){axis = yAxis;};
+  document.getElementById("ButtonZ").onclick = function(){axis = zAxis;};
+  document.getElementById("ButtonT").onclick = function(){flag = !flag};
+ 
+ 
   document.getElementById('slider0').onchange = function (event) {
+   
     theta[torsoId] = event.target.value
     initNodes(torsoId)
   }
@@ -139,6 +215,55 @@ window.onload = function init () {
   for (let i = 0; i < numNodes; i++) {
     initNodes(i)
   }
+  
+  gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),
+  ambientProduct);
+gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),
+  diffuseProduct );
+gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),
+  specularProduct );
+gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"),
+  lightPosition );
+
+gl.uniform1f(gl.getUniformLocation(program,
+  "uShininess"), materialShininess);
+
+gl.uniformMatrix4fv( gl.getUniformLocation(program, "projectionMatrix"),
+  false, flatten(projectionMatrix) );
+
+
+
+  canvas.addEventListener("mousedown", function(event){
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.clear( gl.COLOR_BUFFER_BIT);
+    gl.uniform3fv(thetaLoc, theta);
+    for(var i=0; i<6; i++) {
+        gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
+        gl.drawArrays( gl.TRIANGLES, 6*i, 6 );
+    }
+    var x = event.clientX;
+    var y = canvas.height-event.clientY;
+
+    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
+
+    if(color[0]==255)
+    if(color[1]==255) console.log("front");
+    else if(color[2]==255) console.log("back");
+    else console.log("right");
+    else if(color[1]==255)
+    if(color[2]==255) console.log("left");
+    else console.log("top");
+    else if(color[2]==255) console.log("bottom");
+    else console.log("background");
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), 0);
+    gl.clear( gl.COLOR_BUFFER_BIT );
+    gl.uniform3fv(thetaLoc, theta);
+    gl.drawArrays(gl.TRIANGLES, 0, numPositions);
+
+});
   render()
 }
 
@@ -227,6 +352,7 @@ function torso () {
   instanceMatrix = mult(instanceMatrix, scale(torsoWidth, torsoHeight, torsoWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+    // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -236,6 +362,7 @@ function head () {
   instanceMatrix = mult(instanceMatrix, scale(headWidth, headHeight, headWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+    // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -245,6 +372,7 @@ function leftUpperArm () {
   instanceMatrix = mult(instanceMatrix, scale(upperArmWidth, upperArmHeight, upperArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+    // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -254,6 +382,7 @@ function leftLowerArm () {
   instanceMatrix = mult(instanceMatrix, scale(lowerArmWidth, lowerArmHeight, lowerArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -263,6 +392,7 @@ function rightUpperArm () {
   instanceMatrix = mult(instanceMatrix, scale(upperArmWidth, upperArmHeight, upperArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+    //gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -272,6 +402,7 @@ function rightLowerArm () {
   instanceMatrix = mult(instanceMatrix, scale(lowerArmWidth, lowerArmHeight, lowerArmWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -281,6 +412,7 @@ function leftUpperLeg () {
   instanceMatrix = mult(instanceMatrix, scale(upperLegWidth, upperLegHeight, upperLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -290,6 +422,7 @@ function leftLowerLeg () {
   instanceMatrix = mult(instanceMatrix, scale(lowerLegWidth, lowerLegHeight, lowerLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+   // gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -299,6 +432,7 @@ function rightUpperLeg () {
   instanceMatrix = mult(instanceMatrix, scale(upperLegWidth, upperLegHeight, upperLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -308,6 +442,7 @@ function rightLowerLeg () {
   instanceMatrix = mult(instanceMatrix, scale(lowerLegWidth, lowerLegHeight, lowerLegWidth))
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix))
   for (let i = 0; i < 6; i++) {
+  //  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"), i+1);
     gl.drawArrays(gl.TRIANGLE_FAN, 4 * i, 4)
   }
 }
@@ -322,14 +457,45 @@ function cube () {
 }
 
 function quad (a, b, c, d) {
+  var t1 = subtract(vertices[b], vertices[a]);
+  var t2 = subtract(vertices[c], vertices[b]);
+  var normal = cross(t1, t2);
+  normal = normalize(normal);
+
+
   pointsArray.push(vertices[a])
+  normalsArray.push(normal);
+
   pointsArray.push(vertices[b])
-  pointsArray.push(vertices[c])
+  normalsArray.push(normal);
+
+  pointsArray.push(vertices[c]);
+  normalsArray.push(normal);
+
+  // pointsArray.push(vertices[a])
+  // normalsArray.push(normal);
+
+  // pointsArray.push(vertices[c]);
+  // normalsArray.push(normal);
+
   pointsArray.push(vertices[d])
+  normalsArray.push(normal);
 }
 
 function render () {
   gl.clear(gl.COLOR_BUFFER_BIT)
+  if(flag) theta[axis] += 2.0;
+  modelViewMatrix = mat4();
+  modelViewMatrix = mult(modelViewMatrix, rotate(theta[xAxis], vec3(1, 0, 0)));
+  modelViewMatrix = mult(modelViewMatrix, rotate(theta[yAxis], vec3(0, 1, 0)));
+  modelViewMatrix = mult(modelViewMatrix, rotate(theta[zAxis], vec3(0, 0, 1)));
+
+  gl.uniformMatrix4fv(gl.getUniformLocation(program,
+          "modelViewMatrix"), false, flatten(modelViewMatrix));
+
+  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"),0);
+  gl.drawArrays(gl.TRIANGLES, 0, numPositions);
+
   traverse(torsoId)
   window.requestAnimationFrame(render)
 }
