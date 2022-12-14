@@ -27,7 +27,7 @@ const vertices = [
 ]
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
-var lightDiffuse = vec4( 1.0, 0.0, 1.0, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
@@ -489,17 +489,7 @@ function quad (a, b, c, d) {
 
 function render () {
   gl.clear(gl.COLOR_BUFFER_BIT)
-  if(flag) theta[axis] += 2.0;
-  modelViewMatrix = mat4();
-  modelViewMatrix = mult(modelViewMatrix, rotate(theta[xAxis], vec3(1, 0, 0)));
-  modelViewMatrix = mult(modelViewMatrix, rotate(theta[yAxis], vec3(0, 1, 0)));
-  modelViewMatrix = mult(modelViewMatrix, rotate(theta[zAxis], vec3(0, 0, 1)));
-
-  gl.uniformMatrix4fv(gl.getUniformLocation(program,
-          "modelViewMatrix"), false, flatten(modelViewMatrix));
-
-  gl.uniform1i(gl.getUniformLocation(program, "uColorIndex"),0);
-  gl.drawArrays(gl.TRIANGLES, 0, numPositions);
+ 
 
   traverse(torsoId)
   window.requestAnimationFrame(render)
