@@ -224,7 +224,7 @@ for (let i = 0; i < numNodes; i++) {
        false, flatten(projectionMatrix));
            
     //comment this line to see other shader effect in robot and uncomment   modelViewMatrixLoc to either for program2 or program 3
-   // modelViewMatrixLoc = gl.getUniformLocation(program2, 'modelViewMatrix')
+   modelViewMatrixLoc = gl.getUniformLocation(program2, 'modelViewMatrix')
 
 
     
@@ -262,7 +262,7 @@ for (let i = 0; i < numNodes; i++) {
     gl.uniformMatrix4fv( gl.getUniformLocation(program1, "projectionMatrix"),false, flatten(projectionMatrix));
     
     //comment this line to see other shader effect in robot and uncomment   modelViewMatrixLoc to either for program2 or program 3
-    modelViewMatrixLoc = gl.getUniformLocation(program1, 'modelViewMatrix')
+   // modelViewMatrixLoc = gl.getUniformLocation(program1, 'modelViewMatrix')
 
 
           for (let i = 0; i < numNodes; i++) {
